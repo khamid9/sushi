@@ -1,0 +1,138 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(13, 13, 13, 0.92);
+  backdrop-filter: blur(16px);
+}
+
+.inner {
+  width: min(1180px, calc(100% - 32px));
+  min-height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #e53935;
+  border-radius: 50%;
+  color: #e53935;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.nav a {
+  color: #a3a3a3;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.nav a:hover,
+.nav a[aria-current="page"] {
+  color: #fff;
+}
+
+.cartLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cartCount {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e53935;
+  color: #fff;
+  font-size: 12px;
+}
+
+.menuButton {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .inner {
+    width: min(100% - 24px, 1180px);
+    min-height: 64px;
+  }
+
+  .name {
+    font-size: 16px;
+  }
+
+  .menuButton {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    padding: 12px 10px;
+    align-content: center;
+    gap: 7px;
+    border: 1px solid #2b2b2b;
+    border-radius: 8px;
+    background: #151515;
+  }
+
+  .menuButton span {
+    height: 2px;
+    background: #fff;
+  }
+
+  .nav {
+    position: absolute;
+    top: 64px;
+    right: 12px;
+    left: 12px;
+    display: none;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px;
+    border: 1px solid #2b2b2b;
+    border-radius: 8px;
+    background: #151515;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .navOpen {
+    display: grid;
+  }
+
+  .nav a {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+  }
+
+  .cartLink {
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,399 @@
+.loginPage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at top, #211716 0, #0d0d0d 45%);
+}
+
+.loginCard {
+  width: min(390px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #151515;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.brandMark {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e53935;
+  border-radius: 50%;
+  color: #e53935;
+  font-weight: 900;
+}
+
+.loginCard h1,
+.loginCard p {
+  margin: 0;
+}
+
+.loginCard p {
+  color: #a3a3a3;
+}
+
+.loginCard label,
+.form label {
+  display: grid;
+  gap: 7px;
+  color: #d8d8d8;
+  font-size: 14px;
+}
+
+.loginCard input,
+.form input,
+.form textarea,
+.form select,
+.order select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #1e1e1e;
+  color: #fff;
+  padding: 0 12px;
+}
+
+.form textarea {
+  height: auto;
+  min-height: 86px;
+  padding-top: 10px;
+}
+
+.loginCard button,
+.titleRow button,
+.actions button,
+.rowActions button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: #e53935;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.error,
+.state {
+  padding: 12px;
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #1e1e1e;
+  color: #ffaaa7;
+}
+
+.adminShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  background: #0d0d0d;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  align-content: start;
+  gap: 26px;
+  padding: 24px 16px;
+  border-right: 1px solid #2b2b2b;
+  background: #151515;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e53935;
+  border-radius: 50%;
+  color: #e53935;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 6px;
+}
+
+.sidebar nav button,
+.logout {
+  min-height: 46px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #a3a3a3;
+  text-align: left;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.sidebar nav button b {
+  float: right;
+  min-width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e53935;
+  color: #fff;
+}
+
+.sidebar nav .active {
+  background: #1e1e1e;
+  color: #fff;
+}
+
+.logout {
+  align-self: end;
+  margin-top: auto;
+}
+
+.content {
+  min-width: 0;
+  padding: 34px;
+}
+
+.content h1 {
+  margin: 0 0 24px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stats article {
+  min-height: 130px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #1e1e1e;
+}
+
+.stats span {
+  color: #a3a3a3;
+}
+
+.stats strong {
+  font-size: 32px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.titleRow button {
+  padding: 0 16px;
+}
+
+.titleRow h1 {
+  margin-bottom: 0;
+}
+
+.titleRow button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.pushMessage {
+  margin: 14px 0;
+  color: #a3a3a3;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #151515;
+}
+
+.check {
+  grid-template-columns: 20px 1fr;
+  align-items: center;
+}
+
+.check input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.actions button {
+  padding: 0 16px;
+}
+
+.actions button:first-child,
+.rowActions button {
+  border: 1px solid #2b2b2b;
+  background: #1e1e1e;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 14px;
+  border-bottom: 1px solid #2b2b2b;
+  text-align: left;
+}
+
+th {
+  color: #a3a3a3;
+  font-size: 13px;
+}
+
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.rowActions button {
+  padding: 0 10px;
+}
+
+.orders {
+  display: grid;
+  gap: 10px;
+}
+
+.order {
+  display: grid;
+  grid-template-columns: 180px minmax(160px, 1fr) minmax(220px, 1fr) 120px 180px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #2b2b2b;
+  border-radius: 8px;
+  background: #1e1e1e;
+}
+
+.order div,
+.order p {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: #a3a3a3;
+}
+
+.order div strong {
+  color: #fff;
+}
+
+.order select {
+  width: 100%;
+}
+
+@media (max-width: 980px) {
+  .adminShell {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    padding: 16px 8px;
+  }
+
+  .logo strong,
+  .sidebar nav button:not(.active),
+  .sidebar nav button {
+    font-size: 0;
+  }
+
+  .sidebar nav button::first-letter {
+    font-size: 14px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .order {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .adminShell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: relative;
+    height: auto;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .sidebar nav {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sidebar nav button,
+  .logout {
+    font-size: 12px;
+    padding: 0 4px;
+    text-align: center;
+  }
+
+  .logout {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .content {
+    padding: 20px 12px;
+  }
+
+  .titleRow {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .stats,
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    grid-column: 1;
+  }
+}

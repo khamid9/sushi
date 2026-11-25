@@ -1,0 +1,18 @@
+{
+  "name": "Sushi Lab",
+  "short_name": "Sushi Lab",
+  "description": "Заказ суши и роллов",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "icons": [
+    {
+      "src": "/sushi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
