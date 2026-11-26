@@ -1,9 +1,17 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../components/Header/Header.jsx";
 import Footer from "../../components/Footer/Footer.jsx";
+import { apiUrl } from "../../lib/api.js";
 import styles from "./Home.module.css";
 
 function Home() {
+  useEffect(() => {
+    fetch(apiUrl("/api/health"), { cache: "no-store" }).then((response) => {
+      if (!response.ok) throw new Error(`API warm-up failed with status ${response.status}`);
+    }).catch((error) => console.warn("Could not warm up the API", error));
+  }, []);
+
   return (
     <>
       <Header />
