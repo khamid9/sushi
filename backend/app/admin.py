@@ -290,6 +290,12 @@ def change_order_status(order_id: str, data: OrderStatusUpdate, db: Session = De
     item = db.query(Order).filter(Order.id == order_id).first()
     if not item:
         raise HTTPException(status_code=404, detail='Заказ не найден')
+    if data.status == 'done':
+        item.status = data.status
+        response = OrderOut.model_validate(item)
+        db.delete(item)
+        db.commit()
+        return response
     item.status = data.status
     db.commit()
     db.refresh(item)
