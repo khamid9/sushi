@@ -76,6 +76,41 @@ function Admin() {
   }, [token]);
 
   useEffect(() => {
+    if (!token || loading) return undefined;
+
+    let active = true;
+    let requestInFlight = false;
+    const refreshOrders = async () => {
+      if (!active || requestInFlight || document.visibilityState !== 'visible') return;
+      requestInFlight = true;
+      try {
+        const orderData = await api('/api/admin/orders', {}, token);
+        if (active) setOrders(orderData);
+      } catch (requestError) {
+        if (!active) return;
+        if (requestError.message.includes('токен') || requestError.message.includes('Authorization')) logout();
+        else setError(requestError.message);
+      } finally {
+        requestInFlight = false;
+      }
+    };
+
+    const handleVisible = () => {
+      if (document.visibilityState === 'visible') refreshOrders();
+    };
+    const intervalId = window.setInterval(refreshOrders, 15000);
+    window.addEventListener('focus', handleVisible);
+    document.addEventListener('visibilitychange', handleVisible);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleVisible);
+      document.removeEventListener('visibilitychange', handleVisible);
+    };
+  }, [token, loading]);
+
+  useEffect(() => {
     if (!token) return undefined;
     let active = true;
     api('/api/admin/push/vapid-public-key', {}, token)
@@ -85,7 +120,9 @@ function Admin() {
       .catch((requestError) => {
         if (active) {
           setPushError(true);
-          setPushMessage(requestError.message);
+          setPushMessage(requestError.message.includes('Push-уведомления не настроены')
+            ? 'На сервере не настроены VAPID-ключи. Добавьте VAPID_PUBLIC_KEY и VAPID_PRIVATE_KEY в Render.'
+            : requestError.message);
         }
       });
     return () => {
@@ -366,7 +403,12 @@ function Admin() {
         )}
         {!loading && section === 'orders' && (
           <>
-            <h1>Заказы</h1>
+            <div className={styles.titleRow}>
+              <div>
+                <h1>Заказы</h1>
+                <p className={styles.refreshHint}>Автообновление каждые 15 секунд</p>
+              </div>
+            </div>
             <div className={styles.orders}>{orders.length ? orders.map((order) => (
               <article className={styles.order} key={order.id}>
                 <div><strong>{order.customer_name}</strong><span>{order.phone}</span></div>

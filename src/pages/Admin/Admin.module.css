@@ -211,6 +211,12 @@
   margin-bottom: 0;
 }
 
+.refreshHint {
+  margin: 6px 0 0;
+  color: #a3a3a3;
+  font-size: 13px;
+}
+
 .titleRow button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
