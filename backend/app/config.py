@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     vapid_public_key: str = ""
     vapid_private_key: str = ""
     vapid_subject: str = "mailto:admin@example.com"
+    supabase_url: str = ""
+    supabase_secret_key: str = ""
+    supabase_storage_bucket: str = ""
     r2_endpoint_url: str = ""
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
@@ -27,6 +30,14 @@ class Settings(BaseSettings):
             self.r2_secret_access_key,
             self.r2_bucket,
             self.r2_public_base_url,
+        ))
+
+    @property
+    def supabase_storage_configured(self) -> bool:
+        return all((
+            self.supabase_url,
+            self.supabase_secret_key,
+            self.supabase_storage_bucket,
         ))
 
 

@@ -3,8 +3,10 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import quote
 
 import boto3
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from botocore.exceptions import BotoCoreError, ClientError
@@ -23,6 +25,7 @@ from app.schemas import (
 router = APIRouter(prefix='/api/admin', tags=['admin'])
 bearer = HTTPBearer()
 logger = logging.getLogger(__name__)
+max_image_size_bytes = 10 * 1024 * 1024
 
 
 def ensure_admin_security_configured():
@@ -202,7 +205,37 @@ def upload_image(file: UploadFile = File(...), _: dict = Depends(require_admin))
     suffix = Path(file.filename or '').suffix.lower()
     if suffix not in {'.jpg', '.jpeg', '.png', '.webp'}:
         raise HTTPException(status_code=400, detail='Неверный формат файла')
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    if file_size > max_image_size_bytes:
+        raise HTTPException(status_code=413, detail='Размер изображения не должен превышать 10 МБ')
     filename = f'{uuid.uuid4().hex}{suffix}'
+    if settings.supabase_storage_configured:
+        bucket = quote(settings.supabase_storage_bucket, safe='')
+        object_path = f'products/{filename}'
+        encoded_path = quote(object_path, safe='/')
+        try:
+            response = httpx.post(
+                f'{settings.supabase_url.rstrip("/")}/storage/v1/object/{bucket}/{encoded_path}',
+                content=file.file.read(),
+                headers={
+                    'Authorization': f'Bearer {settings.supabase_secret_key}',
+                    'apikey': settings.supabase_secret_key,
+                    'Content-Type': file.content_type or 'application/octet-stream',
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as error:
+            logger.exception('Could not upload product image to Supabase Storage')
+            raise HTTPException(status_code=502, detail='Не удалось сохранить изображение в Supabase Storage') from error
+        public_url = (
+            f'{settings.supabase_url.rstrip("/")}/storage/v1/object/public/'
+            f'{bucket}/{encoded_path}'
+        )
+        return {'url': public_url}
+
     if settings.r2_configured:
         try:
             client = boto3.client(
