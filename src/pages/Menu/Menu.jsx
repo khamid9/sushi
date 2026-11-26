@@ -5,6 +5,7 @@ import { useCart } from '../../context/CartContext.jsx';
 import CartBar from './CartBar.jsx';
 import styles from './Menu.module.css';
 import { apiUrl } from '../../lib/api.js';
+import { getOptimizedMenuImageUrl } from '../../lib/menuImages.js';
 
 function Menu() {
   const [categories, setCategories] = useState([]);
@@ -91,31 +92,42 @@ function Menu() {
 
             {visibleProducts.length ? (
               <div className={styles.grid}>
-                {visibleProducts.map((product) => (
-                  <article className={styles.card} key={product.id}>
-                    <button
-                      type="button"
-                      className={styles.imageButton}
-                      onClick={() => setSelectedProduct(product)}
-                      aria-label={`Подробнее о ${product.name}`}
-                    >
-                      {product.image_url ? (
-                        <img src={product.image_url} alt={product.name} loading="lazy" />
-                      ) : (
-                        <div className={styles.placeholder}>Sushi Lab</div>
-                      )}
-                    </button>
-                    <div className={styles.info}>
-                      <h2>{product.name}</h2>
-                      <p>{product.description}</p>
-                      {product.weight && <span className={styles.weight}>{product.weight}</span>}
-                      <div className={styles.bottom}>
-                        <strong>{Number(product.price).toLocaleString('ru-RU')} сом</strong>
-                        <button type="button" onClick={() => addToCart(product)}>Добавить</button>
+                {visibleProducts.map((product, index) => {
+                  const imageUrl = getOptimizedMenuImageUrl(product.image_url);
+                  return (
+                    <article className={styles.card} key={product.id}>
+                      <button
+                        type="button"
+                        className={styles.imageButton}
+                        onClick={() => setSelectedProduct(product)}
+                        aria-label={`Подробнее о ${product.name}`}
+                      >
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={product.name}
+                            loading={index < 3 ? 'eager' : 'lazy'}
+                            fetchPriority={index === 0 ? 'high' : undefined}
+                            decoding="async"
+                            width="640"
+                            height="480"
+                          />
+                        ) : (
+                          <div className={styles.placeholder}>Sushi Lab</div>
+                        )}
+                      </button>
+                      <div className={styles.info}>
+                        <h2>{product.name}</h2>
+                        <p>{product.description}</p>
+                        {product.weight && <span className={styles.weight}>{product.weight}</span>}
+                        <div className={styles.bottom}>
+                          <strong>{Number(product.price).toLocaleString('ru-RU')} сом</strong>
+                          <button type="button" onClick={() => addToCart(product)}>Добавить</button>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <div className={styles.state}>По вашему запросу ничего не найдено</div>
@@ -127,7 +139,15 @@ function Menu() {
               }}>
                 <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="product-title">
                   <button type="button" className={styles.modalClose} onClick={() => setSelectedProduct(null)} aria-label="Закрыть">×</button>
-                  {selectedProduct.image_url && <img src={selectedProduct.image_url} alt={selectedProduct.name} />}
+                  {selectedProduct.image_url && (
+                    <img
+                      src={getOptimizedMenuImageUrl(selectedProduct.image_url)}
+                      alt={selectedProduct.name}
+                      decoding="async"
+                      width="960"
+                      height="720"
+                    />
+                  )}
                   <div className={styles.modalBody}>
                     <h2 id="product-title">{selectedProduct.name}</h2>
                     {selectedProduct.weight && <span>{selectedProduct.weight}</span>}

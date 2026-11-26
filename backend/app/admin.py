@@ -25,12 +25,28 @@ bearer = HTTPBearer()
 logger = logging.getLogger(__name__)
 
 
+def ensure_admin_security_configured():
+    if settings.app_env.lower() != 'production':
+        return
+    if (
+        not settings.admin_username.strip()
+        or not settings.admin_password.strip()
+        or settings.admin_password == 'admin'
+        or settings.jwt_secret.strip() in {'', 'change-me-in-production'}
+    ):
+        raise HTTPException(
+            status_code=503,
+            detail='Задайте ADMIN_USERNAME, непустой ADMIN_PASSWORD не admin и секретный JWT_SECRET на сервере',
+        )
+
+
 def create_token(username: str) -> str:
     expire = datetime.utcnow() + timedelta(hours=12)
     return jwt.encode({'sub': username, 'exp': expire}, settings.jwt_secret, algorithm='HS256')
 
 
 def require_admin(credentials: HTTPAuthorizationCredentials = Depends(bearer)):
+    ensure_admin_security_configured()
     try:
         payload = jwt.decode(credentials.credentials, settings.jwt_secret, algorithms=['HS256'])
         if payload.get('sub') != settings.admin_username:
@@ -42,6 +58,7 @@ def require_admin(credentials: HTTPAuthorizationCredentials = Depends(bearer)):
 
 @router.post('/login', response_model=TokenOut)
 def login(data: LoginIn):
+    ensure_admin_security_configured()
     username_ok = secrets.compare_digest(data.username, settings.admin_username)
     password_ok = secrets.compare_digest(data.password, settings.admin_password)
     if not (username_ok and password_ok):

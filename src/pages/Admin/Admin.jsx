@@ -45,6 +45,17 @@ function Admin() {
   const [pushError, setPushError] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
 
+  useEffect(() => {
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    const previousHref = manifestLink?.getAttribute('href');
+    if (!manifestLink) return undefined;
+
+    manifestLink.setAttribute('href', '/admin.webmanifest');
+    return () => {
+      if (previousHref) manifestLink.setAttribute('href', previousHref);
+    };
+  }, []);
+
   const logout = () => {
     localStorage.removeItem('admin-token');
     setToken('');

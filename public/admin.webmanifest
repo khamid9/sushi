@@ -1,0 +1,19 @@
+{
+  "id": "/admin",
+  "name": "Sushi Lab Admin",
+  "short_name": "Sushi Admin",
+  "description": "Управление заказами Sushi Lab",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "icons": [
+    {
+      "src": "/sushi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

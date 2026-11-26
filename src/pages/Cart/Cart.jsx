@@ -5,6 +5,7 @@ import Footer from '../../components/Footer/Footer.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import CheckoutModal from '../../components/CheckoutModal/CheckoutModal.jsx';
 import styles from './Cart.module.css';
+import { getOptimizedMenuImageUrl } from '../../lib/menuImages.js';
 
 function Cart() {
   const { items, setQuantity, decreaseItem, addItem, removeItem, clearCart, totalPrice } = useCart();
@@ -41,7 +42,14 @@ function Cart() {
             {items.map((item) => (
               <article className={styles.item} key={item.id}>
                 {item.image_url
-                  ? <img src={item.image_url} alt={item.name} />
+                  ? <img
+                    src={getOptimizedMenuImageUrl(item.image_url)}
+                    alt={item.name}
+                    loading="lazy"
+                    decoding="async"
+                    width="640"
+                    height="480"
+                  />
                   : <div className={styles.imagePlaceholder}>Sushi Lab</div>}
                 <div className={styles.itemInfo}>
                   <h2>{item.name}</h2>
