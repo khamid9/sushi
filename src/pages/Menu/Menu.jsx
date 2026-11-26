@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Header from '../../components/Header/Header.jsx';
 import Footer from '../../components/Footer/Footer.jsx';
 import { useCart } from '../../context/CartContext.jsx';
@@ -6,8 +6,9 @@ import CartBar from './CartBar.jsx';
 import styles from './Menu.module.css';
 import { apiUrl } from '../../lib/api.js';
 import { getOptimizedMenuImageUrl } from '../../lib/menuImages.js';
+import { MENU_CACHE_KEY } from '../../lib/menuCache.js';
 
-const MENU_CACHE_KEY = 'sushi-menu-cache-v1';
+const ADD_CLICK_COOLDOWN_MS = 1000;
 
 function readMenuCache() {
   try {
@@ -29,35 +30,79 @@ function Menu() {
   const [loading, setLoading] = useState(!initialCache);
   const [error, setError] = useState('');
   const [cacheWarning, setCacheWarning] = useState(false);
+  const [recentlyAddedIds, setRecentlyAddedIds] = useState(() => new Set());
+  const addLocks = useRef(new Set());
+  const addTimers = useRef(new Map());
+  const hasCatalog = useRef(Boolean(initialCache));
   const { addItem, totalQuantity, totalPrice } = useCart();
 
   useEffect(() => {
-    Promise.all([
-      fetch(apiUrl('/api/categories')).then((response) => {
-        if (!response.ok) throw new Error('Не удалось загрузить категории');
-        return response.json();
-      }),
-      fetch(apiUrl('/api/products')).then((response) => {
-        if (!response.ok) throw new Error('Не удалось загрузить меню');
-        return response.json();
-      }),
-    ]).then(([categoryData, productData]) => {
-      setCategories(categoryData);
-      setProducts(productData);
-      setCacheWarning(false);
-      try {
-        localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({
-          categories: categoryData,
-          products: productData,
-        }));
-      } catch (storageError) {
-        console.warn('Could not cache the menu', storageError);
+    let active = true;
+    let requestInFlight = false;
+    let refreshRequested = false;
+    const loadCatalog = async (refreshAfterCurrent = false) => {
+      if (requestInFlight) {
+        refreshRequested = refreshRequested || refreshAfterCurrent;
+        return;
       }
-    }).catch((requestError) => {
-      if (initialCache) setCacheWarning(true);
-      else setError(requestError.message);
-    }).finally(() => setLoading(false));
+      requestInFlight = true;
+      try {
+        const [categoryData, productData] = await Promise.all([
+          fetch(apiUrl('/api/categories')).then((response) => {
+            if (!response.ok) throw new Error('Не удалось загрузить категории');
+            return response.json();
+          }),
+          fetch(apiUrl('/api/products')).then((response) => {
+            if (!response.ok) throw new Error('Не удалось загрузить меню');
+            return response.json();
+          }),
+        ]);
+        if (!active) return;
+        setCategories(categoryData);
+        setProducts(productData);
+        hasCatalog.current = true;
+        setError('');
+        setCacheWarning(false);
+        try {
+          localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({
+            categories: categoryData,
+            products: productData,
+          }));
+        } catch (storageError) {
+          console.warn('Could not cache the menu', storageError);
+        }
+      } catch (requestError) {
+        if (!active) return;
+        if (hasCatalog.current) setCacheWarning(true);
+        else setError(requestError.message);
+      } finally {
+        requestInFlight = false;
+        if (active) {
+          setLoading(false);
+          if (refreshRequested) {
+            refreshRequested = false;
+            loadCatalog();
+          }
+        }
+      }
+    };
+    const handleStorage = (event) => {
+      if (event.key === MENU_CACHE_KEY && event.newValue === null) loadCatalog(true);
+    };
+
+    loadCatalog();
+    window.addEventListener('focus', loadCatalog);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', loadCatalog);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [initialCache]);
+
+  useEffect(() => () => {
+    addTimers.current.forEach((timer) => window.clearTimeout(timer));
+  }, []);
 
   const query = search.trim().toLowerCase();
   const visibleProducts = products.filter((product) => {
@@ -67,7 +112,21 @@ function Menu() {
   });
 
   const addToCart = (product) => {
+    const productId = String(product.id);
+    if (addLocks.current.has(productId)) return;
+    addLocks.current.add(productId);
     addItem(product);
+    setRecentlyAddedIds((current) => new Set(current).add(productId));
+    const timer = window.setTimeout(() => {
+      addLocks.current.delete(productId);
+      addTimers.current.delete(productId);
+      setRecentlyAddedIds((current) => {
+        const next = new Set(current);
+        next.delete(productId);
+        return next;
+      });
+    }, ADD_CLICK_COOLDOWN_MS);
+    addTimers.current.set(productId, timer);
   };
 
   return (
@@ -149,7 +208,13 @@ function Menu() {
                         {product.weight && <span className={styles.weight}>{product.weight}</span>}
                         <div className={styles.bottom}>
                           <strong>{Number(product.price).toLocaleString('ru-RU')} сом</strong>
-                          <button type="button" onClick={() => addToCart(product)}>Добавить</button>
+                          <button
+                            type="button"
+                            disabled={recentlyAddedIds.has(String(product.id))}
+                            onClick={() => addToCart(product)}
+                          >
+                            {recentlyAddedIds.has(String(product.id)) ? 'Добавлено ✓' : 'Добавить'}
+                          </button>
                         </div>
                       </div>
                     </article>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './Admin.module.css';
 import { apiUrl } from '../../lib/api.js';
+import { invalidateMenuCache } from '../../lib/menuCache.js';
 
 const api = async (path, options = {}, token = '') => {
   const response = await fetch(apiUrl(path), {
@@ -39,6 +40,8 @@ function Admin() {
   const [error, setError] = useState('');
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [savingCategory, setSavingCategory] = useState(false);
   const [pushPublicKey, setPushPublicKey] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushMessage, setPushMessage] = useState('');
@@ -47,6 +50,8 @@ function Admin() {
   const [updatingOrderIds, setUpdatingOrderIds] = useState(() => new Set());
   const ordersRevision = useRef(0);
   const pendingOrderUpdates = useRef(new Set());
+  const savingProductRef = useRef(false);
+  const savingCategoryRef = useRef(false);
 
   const logout = () => {
     localStorage.removeItem('admin-token');
@@ -254,26 +259,36 @@ function Admin() {
 
   const saveCategory = async (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: form.get('name').trim(),
-      description: form.get('description').trim(),
-      image_url: form.get('image_url').trim() || null,
-      is_active: form.has('is_active'),
-      sort_order: Number(form.get('sort_order') || 0),
-    };
+    if (savingCategoryRef.current) return;
+    savingCategoryRef.current = true;
+    setSavingCategory(true);
     try {
+      const form = new FormData(event.currentTarget);
+      const payload = {
+        name: form.get('name').trim(),
+        description: form.get('description').trim(),
+        image_url: form.get('image_url').trim() || null,
+        is_active: form.has('is_active'),
+        sort_order: Number(form.get('sort_order') || 0),
+      };
       if (editingCategory?.id) await api(`/api/admin/categories/${editingCategory.id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
       else await api('/api/admin/categories', { method: 'POST', body: JSON.stringify(payload) }, token);
+      invalidateMenuCache();
       setEditingCategory(null);
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      savingCategoryRef.current = false;
+      setSavingCategory(false);
     }
   };
 
   const saveProduct = async (event) => {
     event.preventDefault();
+    if (savingProductRef.current) return;
+    savingProductRef.current = true;
+    setSavingProduct(true);
     try {
       const form = new FormData(event.currentTarget);
       const imageFile = form.get('image');
@@ -296,10 +311,14 @@ function Admin() {
       };
       if (editingProduct?.id) await api(`/api/admin/products/${editingProduct.id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
       else await api('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) }, token);
+      invalidateMenuCache();
       setEditingProduct(null);
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      savingProductRef.current = false;
+      setSavingProduct(false);
     }
   };
 
@@ -307,6 +326,7 @@ function Admin() {
     if (!window.confirm('Удалить категорию?')) return;
     try {
       await api(`/api/admin/categories/${categoryId}`, { method: 'DELETE' }, token);
+      invalidateMenuCache();
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -317,6 +337,7 @@ function Admin() {
     if (!window.confirm('Удалить товар?')) return;
     try {
       await api(`/api/admin/products/${productId}`, { method: 'DELETE' }, token);
+      invalidateMenuCache();
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -419,7 +440,7 @@ function Admin() {
                 <label>URL изображения<input name="image_url" defaultValue={editingCategory.image_url || ''} /></label>
                 <label>Порядок<input name="sort_order" type="number" defaultValue={editingCategory.sort_order || 0} /></label>
                 <label className={styles.check}><input name="is_active" type="checkbox" defaultChecked={editingCategory.is_active !== false} /> Активна</label>
-                <div className={styles.actions}><button type="button" onClick={() => setEditingCategory(null)}>Отмена</button><button type="submit">Сохранить</button></div>
+                <div className={styles.actions}><button type="button" disabled={savingCategory} onClick={() => setEditingCategory(null)}>Отмена</button><button type="submit" disabled={savingCategory}>{savingCategory ? 'Сохраняем...' : 'Сохранить'}</button></div>
               </form>
             )}
             <div className={styles.tableWrap}><table><thead><tr><th>Название</th><th>Порядок</th><th>Статус</th><th /></tr></thead><tbody>{categories.map((item) => <tr key={item.id}><td>{item.name}</td><td>{item.sort_order}</td><td>{item.is_active ? 'Активна' : 'Скрыта'}</td><td className={styles.rowActions}><button onClick={() => setEditingCategory(item)}>Изменить</button><button onClick={() => deleteCategory(item.id)}>Удалить</button></td></tr>)}</tbody></table></div>
@@ -439,7 +460,7 @@ function Admin() {
                 <label>Загрузить фото<input name="image" type="file" accept="image/jpeg,image/png,image/webp" /></label>
                 <label className={styles.check}><input name="is_available" type="checkbox" defaultChecked={editingProduct.is_available !== false} /> В наличии</label>
                 <label className={styles.check}><input name="is_featured" type="checkbox" defaultChecked={Boolean(editingProduct.is_featured)} /> Популярный товар</label>
-                <div className={styles.actions}><button type="button" onClick={() => setEditingProduct(null)}>Отмена</button><button type="submit">Сохранить</button></div>
+                <div className={styles.actions}><button type="button" disabled={savingProduct} onClick={() => setEditingProduct(null)}>Отмена</button><button type="submit" disabled={savingProduct}>{savingProduct ? 'Сохраняем...' : 'Сохранить'}</button></div>
               </form>
             )}
             <div className={styles.tableWrap}><table><thead><tr><th>Товар</th><th>Цена</th><th>Вес</th><th>Статус</th><th /></tr></thead><tbody>{products.map((item) => <tr key={item.id}><td>{item.name}</td><td>{Number(item.price).toLocaleString('ru-RU')} сом</td><td>{item.weight || '—'}</td><td>{item.is_available ? 'В наличии' : 'Нет'}</td><td className={styles.rowActions}><button onClick={() => setEditingProduct(item)}>Изменить</button><button onClick={() => deleteProduct(item.id)}>Удалить</button></td></tr>)}</tbody></table></div>

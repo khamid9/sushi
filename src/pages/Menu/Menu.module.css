@@ -184,6 +184,11 @@
   cursor: pointer;
 }
 
+.bottom button:disabled {
+  background: #414141;
+  cursor: default;
+}
+
 .state {
   min-height: 240px;
   display: grid;
