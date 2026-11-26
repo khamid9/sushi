@@ -7,14 +7,28 @@ import styles from './Menu.module.css';
 import { apiUrl } from '../../lib/api.js';
 import { getOptimizedMenuImageUrl } from '../../lib/menuImages.js';
 
+const MENU_CACHE_KEY = 'sushi-menu-cache-v1';
+
+function readMenuCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(MENU_CACHE_KEY) || 'null');
+    return Array.isArray(cached?.categories) && Array.isArray(cached?.products) ? cached : null;
+  } catch (error) {
+    console.warn('Could not read the cached menu', error);
+    return null;
+  }
+}
+
 function Menu() {
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [initialCache] = useState(readMenuCache);
+  const [categories, setCategories] = useState(initialCache?.categories || []);
+  const [products, setProducts] = useState(initialCache?.products || []);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialCache);
   const [error, setError] = useState('');
+  const [cacheWarning, setCacheWarning] = useState(false);
   const { addItem, totalQuantity, totalPrice } = useCart();
 
   useEffect(() => {
@@ -30,8 +44,20 @@ function Menu() {
     ]).then(([categoryData, productData]) => {
       setCategories(categoryData);
       setProducts(productData);
-    }).catch((requestError) => setError(requestError.message)).finally(() => setLoading(false));
-  }, []);
+      setCacheWarning(false);
+      try {
+        localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({
+          categories: categoryData,
+          products: productData,
+        }));
+      } catch (storageError) {
+        console.warn('Could not cache the menu', storageError);
+      }
+    }).catch((requestError) => {
+      if (initialCache) setCacheWarning(true);
+      else setError(requestError.message);
+    }).finally(() => setLoading(false));
+  }, [initialCache]);
 
   const query = search.trim().toLowerCase();
   const visibleProducts = products.filter((product) => {
@@ -55,8 +81,9 @@ function Menu() {
 
         {loading && <div className={styles.state}>Загрузка меню...</div>}
         {error && <div className={styles.state}>{error}</div>}
+        {cacheWarning && <div className={styles.cacheWarning}>Не удалось обновить меню — показана сохранённая версия.</div>}
 
-        {!loading && !error && (
+        {!loading && (!error || initialCache) && (
           <>
             <div className={styles.toolbar}>
               <label className={styles.search}>

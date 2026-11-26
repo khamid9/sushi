@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './Admin.module.css';
 import { apiUrl } from '../../lib/api.js';
 
@@ -44,6 +44,9 @@ function Admin() {
   const [pushMessage, setPushMessage] = useState('');
   const [pushError, setPushError] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [updatingOrderIds, setUpdatingOrderIds] = useState(() => new Set());
+  const ordersRevision = useRef(0);
+  const pendingOrderUpdates = useRef(new Set());
 
   const logout = () => {
     localStorage.removeItem('admin-token');
@@ -81,11 +84,17 @@ function Admin() {
     let active = true;
     let requestInFlight = false;
     const refreshOrders = async () => {
-      if (!active || requestInFlight || document.visibilityState !== 'visible') return;
+      if (
+        !active
+        || requestInFlight
+        || pendingOrderUpdates.current.size
+        || document.visibilityState !== 'visible'
+      ) return;
+      const requestRevision = ordersRevision.current;
       requestInFlight = true;
       try {
         const orderData = await api('/api/admin/orders', {}, token);
-        if (active) setOrders(orderData);
+        if (active && requestRevision === ordersRevision.current) setOrders(orderData);
       } catch (requestError) {
         if (!active) return;
         if (requestError.message.includes('токен') || requestError.message.includes('Authorization')) logout();
@@ -315,11 +324,46 @@ function Admin() {
   };
 
   const changeStatus = async (orderId, status) => {
+    const previousOrder = orders.find((order) => order.id === orderId);
+    if (!previousOrder || pendingOrderUpdates.current.has(orderId)) return;
+
+    ordersRevision.current += 1;
+    pendingOrderUpdates.current.add(orderId);
+    setUpdatingOrderIds((current) => new Set(current).add(orderId));
+    setError('');
+    setOrders((current) => status === 'done'
+      ? current.filter((order) => order.id !== orderId)
+      : current.map((order) => order.id === orderId ? { ...order, status } : order));
+
     try {
-      await api(`/api/admin/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
-      await loadData();
+      const updatedOrder = await api(
+        `/api/admin/orders/${orderId}/status`,
+        { method: 'PATCH', body: JSON.stringify({ status }) },
+        token,
+      );
+      if (updatedOrder.status === 'done') {
+        setOrders((current) => current.filter((order) => order.id !== orderId));
+      } else {
+        setOrders((current) => current.map((order) => order.id === orderId ? updatedOrder : order));
+      }
     } catch (requestError) {
-      setError(requestError.message);
+      ordersRevision.current += 1;
+      setOrders((current) => {
+        if (status !== 'done') {
+          return current.map((order) => order.id === orderId ? previousOrder : order);
+        }
+        return [...current.filter((order) => order.id !== orderId), previousOrder]
+          .sort((left, right) => new Date(right.created_at) - new Date(left.created_at));
+      });
+      if (requestError.message.includes('токен') || requestError.message.includes('Authorization')) logout();
+      else setError(requestError.message);
+    } finally {
+      pendingOrderUpdates.current.delete(orderId);
+      setUpdatingOrderIds((current) => {
+        const next = new Set(current);
+        next.delete(orderId);
+        return next;
+      });
     }
   };
 
@@ -415,7 +459,7 @@ function Admin() {
                 <p>{order.address || 'Адрес не указан'}</p>
                 <p>{order.items.map((item) => `${item.name} × ${item.quantity}`).join(', ')}</p>
                 <strong>{Number(order.total).toLocaleString('ru-RU')} сом</strong>
-                <select value={order.status} onChange={(event) => changeStatus(order.id, event.target.value)}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+                <select value={order.status} disabled={updatingOrderIds.has(order.id)} onChange={(event) => changeStatus(order.id, event.target.value)}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
               </article>
             )) : <div className={styles.state}>Заказов пока нет</div>}</div>
           </>
