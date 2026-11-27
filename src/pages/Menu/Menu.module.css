@@ -206,107 +206,6 @@
   color: #a3a3a3;
 }
 
-.loadingPreview {
-  --skeleton-base: #1b1b1b;
-  --skeleton-highlight: #292929;
-}
-
-.skeletonSearch,
-.skeletonCategories span,
-.skeletonImage,
-.skeletonInfo span {
-  background: linear-gradient(
-    100deg,
-    var(--skeleton-base) 25%,
-    var(--skeleton-highlight) 45%,
-    var(--skeleton-base) 65%
-  );
-  background-size: 220% 100%;
-  animation: skeletonShimmer 1.8s ease-in-out infinite;
-}
-
-.skeletonSearch {
-  width: min(420px, 100%);
-  height: 48px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-}
-
-.skeletonCategories {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-  overflow: hidden;
-}
-
-.skeletonCategories span {
-  height: 44px;
-  flex: 0 0 auto;
-  border-radius: 8px;
-}
-
-.skeletonCard {
-  overflow: hidden;
-  border: 1px solid #252525;
-  border-radius: 8px;
-  background: #1e1e1e;
-}
-
-.skeletonImage {
-  aspect-ratio: 4 / 3;
-}
-
-.skeletonInfo {
-  min-height: 238px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 18px;
-}
-
-.skeletonInfo span {
-  display: block;
-  height: 14px;
-  border-radius: 4px;
-}
-
-.skeletonInfo .skeletonTitle {
-  width: 62%;
-  height: 20px;
-  margin-bottom: 16px;
-}
-
-.skeletonInfo .skeletonDescription {
-  width: 90%;
-}
-
-.skeletonBottom {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: 18px;
-}
-
-.skeletonInfo .skeletonPrice {
-  width: 34%;
-  height: 20px;
-}
-
-.skeletonInfo .skeletonButton {
-  width: 42%;
-  height: 44px;
-  border-radius: 8px;
-}
-
-@keyframes skeletonShimmer {
-  to {
-    background-position-x: -220%;
-  }
-}
-
 @media (max-width: 860px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -330,23 +229,6 @@
   .info {
     min-height: 0;
     padding: 12px;
-  }
-
-  .skeletonInfo {
-    min-height: 0;
-    padding: 12px;
-  }
-
-  .skeletonBottom {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding-top: 12px;
-  }
-
-  .skeletonInfo .skeletonButton {
-    width: 100%;
-    height: 40px;
   }
 
   .info h2 {
@@ -377,14 +259,5 @@
     min-height: 40px;
     padding: 0 8px;
     font-size: 14px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skeletonSearch,
-  .skeletonCategories span,
-  .skeletonImage,
-  .skeletonInfo span {
-    animation: none;
   }
 }

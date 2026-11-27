@@ -7,6 +7,7 @@ import styles from './Menu.module.css';
 import { apiUrl } from '../../lib/api.js';
 import { getOptimizedMenuImageUrl } from '../../lib/menuImages.js';
 import { MENU_CACHE_KEY } from '../../lib/menuCache.js';
+import { menuFallback } from '../../data/menuFallback.js';
 
 const ADD_CLICK_COOLDOWN_MS = 1000;
 
@@ -21,13 +22,12 @@ function readMenuCache() {
 }
 
 function Menu() {
-  const [initialCache] = useState(readMenuCache);
+  const [initialCache] = useState(() => readMenuCache() || menuFallback);
   const [categories, setCategories] = useState(initialCache?.categories || []);
   const [products, setProducts] = useState(initialCache?.products || []);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [loading, setLoading] = useState(!initialCache);
   const [error, setError] = useState('');
   const [cacheWarning, setCacheWarning] = useState(false);
   const [recentlyAddedIds, setRecentlyAddedIds] = useState(() => new Set());
@@ -78,7 +78,6 @@ function Menu() {
       } finally {
         requestInFlight = false;
         if (active) {
-          setLoading(false);
           if (refreshRequested) {
             refreshRequested = false;
             loadCatalog();
@@ -138,35 +137,10 @@ function Menu() {
           <h1>Выберите любимые блюда</h1>
         </div>
 
-        {loading && (
-          <div className={styles.loadingPreview} aria-label="Загружаем меню" aria-busy="true">
-            <div className={styles.skeletonSearch} />
-            <div className={styles.skeletonCategories}>
-              {[72, 92, 82, 104].map((width) => (
-                <span key={width} style={{ width }} />
-              ))}
-            </div>
-            <div className={styles.grid}>
-              {Array.from({ length: 6 }, (_, index) => (
-                <article className={styles.skeletonCard} key={index}>
-                  <div className={styles.skeletonImage} />
-                  <div className={styles.skeletonInfo}>
-                    <span className={styles.skeletonTitle} />
-                    <span className={styles.skeletonDescription} />
-                    <div className={styles.skeletonBottom}>
-                      <span className={styles.skeletonPrice} />
-                      <span className={styles.skeletonButton} />
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
         {error && <div className={styles.state}>{error}</div>}
         {cacheWarning && <div className={styles.cacheWarning}>Не удалось обновить меню — показана сохранённая версия.</div>}
 
-        {!loading && (!error || initialCache) && (
+        {(!error || initialCache) && (
           <>
             <div className={styles.toolbar}>
               <label className={styles.search}>
