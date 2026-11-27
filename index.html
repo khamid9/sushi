@@ -23,6 +23,14 @@
         ? "/admin.webmanifest"
         : "/manifest.webmanifest";
       document.head.appendChild(manifestLink);
+      if (window.location.pathname === "/") {
+        const heroImage = document.createElement("link");
+        heroImage.rel = "preload";
+        heroImage.as = "image";
+        heroImage.href = "/menu/menu-01.webp";
+        heroImage.fetchPriority = "high";
+        document.head.appendChild(heroImage);
+      }
     </script>
     <link rel="icon" type="image/svg+xml" href="/sushi-icon.svg" />
     <title>Sushi Lab — роллы, суши и доставка в Бишкеке</title>

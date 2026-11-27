@@ -138,7 +138,31 @@ function Menu() {
           <h1>Выберите любимые блюда</h1>
         </div>
 
-        {loading && <div className={styles.state}>Загрузка меню...</div>}
+        {loading && (
+          <div className={styles.loadingPreview} aria-label="Загружаем меню" aria-busy="true">
+            <div className={styles.skeletonSearch} />
+            <div className={styles.skeletonCategories}>
+              {[72, 92, 82, 104].map((width) => (
+                <span key={width} style={{ width }} />
+              ))}
+            </div>
+            <div className={styles.grid}>
+              {Array.from({ length: 6 }, (_, index) => (
+                <article className={styles.skeletonCard} key={index}>
+                  <div className={styles.skeletonImage} />
+                  <div className={styles.skeletonInfo}>
+                    <span className={styles.skeletonTitle} />
+                    <span className={styles.skeletonDescription} />
+                    <div className={styles.skeletonBottom}>
+                      <span className={styles.skeletonPrice} />
+                      <span className={styles.skeletonButton} />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
         {error && <div className={styles.state}>{error}</div>}
         {cacheWarning && <div className={styles.cacheWarning}>Не удалось обновить меню — показана сохранённая версия.</div>}
 
