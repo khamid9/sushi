@@ -13,7 +13,11 @@ const api = async (path, options = {}, token = '') => {
     },
   });
   const data = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.detail || 'Ошибка запроса');
+  if (!response.ok) {
+    const error = new Error(data?.detail || 'Ошибка запроса');
+    error.status = response.status;
+    throw error;
+  }
   return data;
 };
 
@@ -56,6 +60,19 @@ function Admin() {
   const logout = () => {
     localStorage.removeItem('admin-token');
     setToken('');
+    setCategories([]);
+    setProducts([]);
+    setOrders([]);
+    setPushPublicKey('');
+    setPushEnabled(false);
+    setPushMessage('');
+    setPushError(false);
+  };
+
+  const handleUnauthorized = (requestError) => {
+    if (requestError.status !== 401) return false;
+    logout();
+    return true;
   };
 
   const loadData = async () => {
@@ -72,8 +89,7 @@ function Admin() {
       setProducts(productData);
       setOrders(orderData);
     } catch (requestError) {
-      if (requestError.message.includes('токен') || requestError.message.includes('Authorization')) logout();
-      else setError(requestError.message);
+      if (!handleUnauthorized(requestError)) setError(requestError.message);
     } finally {
       setLoading(false);
     }
@@ -102,8 +118,7 @@ function Admin() {
         if (active && requestRevision === ordersRevision.current) setOrders(orderData);
       } catch (requestError) {
         if (!active) return;
-        if (requestError.message.includes('токен') || requestError.message.includes('Authorization')) logout();
-        else setError(requestError.message);
+        if (!handleUnauthorized(requestError)) setError(requestError.message);
       } finally {
         requestInFlight = false;
       }
@@ -132,12 +147,11 @@ function Admin() {
         if (active) setPushPublicKey(data.public_key);
       })
       .catch((requestError) => {
-        if (active) {
-          setPushError(true);
-          setPushMessage(requestError.message.includes('Push-уведомления не настроены')
-            ? 'На сервере не настроены VAPID-ключи. Добавьте VAPID_PUBLIC_KEY и VAPID_PRIVATE_KEY в Render.'
-            : requestError.message);
-        }
+        if (!active || handleUnauthorized(requestError)) return;
+        setPushError(true);
+        setPushMessage(requestError.message.includes('Push-уведомления не настроены')
+          ? 'На сервере не настроены VAPID-ключи. Добавьте VAPID_PUBLIC_KEY и VAPID_PRIVATE_KEY в Render.'
+          : requestError.message);
       });
     return () => {
       active = false;
@@ -158,10 +172,9 @@ function Admin() {
         if (active) setPushEnabled(true);
       })
       .catch((requestError) => {
-        if (active) {
-          setPushError(true);
-          setPushMessage(requestError.message);
-        }
+        if (!active || handleUnauthorized(requestError)) return;
+        setPushError(true);
+        setPushMessage(requestError.message);
       });
     return () => {
       active = false;
@@ -196,6 +209,7 @@ function Admin() {
       setPushEnabled(true);
       setPushMessage('Уведомления включены на этом устройстве.');
     } catch (requestError) {
+      if (handleUnauthorized(requestError)) return;
       setPushError(true);
       setPushMessage(requestError.message || 'Не удалось включить уведомления');
     } finally {
@@ -222,6 +236,7 @@ function Admin() {
       setPushEnabled(false);
       setPushMessage('Уведомления выключены на этом устройстве.');
     } catch (requestError) {
+      if (handleUnauthorized(requestError)) return;
       setPushError(true);
       setPushMessage(requestError.message || 'Не удалось выключить уведомления');
     } finally {
@@ -277,7 +292,7 @@ function Admin() {
       setEditingCategory(null);
       await loadData();
     } catch (requestError) {
-      setError(requestError.message);
+      if (!handleUnauthorized(requestError)) setError(requestError.message);
     } finally {
       savingCategoryRef.current = false;
       setSavingCategory(false);
@@ -315,7 +330,7 @@ function Admin() {
       setEditingProduct(null);
       await loadData();
     } catch (requestError) {
-      setError(requestError.message);
+      if (!handleUnauthorized(requestError)) setError(requestError.message);
     } finally {
       savingProductRef.current = false;
       setSavingProduct(false);
@@ -329,7 +344,7 @@ function Admin() {
       invalidateMenuCache();
       await loadData();
     } catch (requestError) {
-      setError(requestError.message);
+      if (!handleUnauthorized(requestError)) setError(requestError.message);
     }
   };
 
@@ -340,7 +355,7 @@ function Admin() {
       invalidateMenuCache();
       await loadData();
     } catch (requestError) {
-      setError(requestError.message);
+      if (!handleUnauthorized(requestError)) setError(requestError.message);
     }
   };
 
@@ -368,6 +383,7 @@ function Admin() {
         setOrders((current) => current.map((order) => order.id === orderId ? updatedOrder : order));
       }
     } catch (requestError) {
+      if (handleUnauthorized(requestError)) return;
       ordersRevision.current += 1;
       setOrders((current) => {
         if (status !== 'done') {
@@ -376,8 +392,7 @@ function Admin() {
         return [...current.filter((order) => order.id !== orderId), previousOrder]
           .sort((left, right) => new Date(right.created_at) - new Date(left.created_at));
       });
-      if (requestError.message.includes('токен') || requestError.message.includes('Authorization')) logout();
-      else setError(requestError.message);
+      setError(requestError.message);
     } finally {
       pendingOrderUpdates.current.delete(orderId);
       setUpdatingOrderIds((current) => {
